@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:lista_de_tarefas/services/file_service.dart';
+import 'package:lista_de_tarefas/widgets/todo.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -10,6 +11,8 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   List _toDoList = <Map>[];
+  Map<String, dynamic> _lastRemoved;
+  int _lastRemovedPos;
 
   @override
   void initState() {
@@ -69,20 +72,41 @@ class _HomeState extends State<Home> {
                   padding: const EdgeInsets.only(top: 10.0),
                   itemCount: _toDoList.length,
                   itemBuilder: (context, index) {
-                    return CheckboxListTile(
+                    return ToDo(
+                      title: _toDoList[index]["title"],
+                      isDone: _toDoList[index]["ok"],
                       onChanged: (newVal) {
                         setState(() {
                           _toDoList[index]["ok"] = newVal;
                           saveData(_toDoList);
                         });
                       },
-                      title: Text(_toDoList[index]["title"]),
-                      value: _toDoList[index]["ok"],
-                      secondary: CircleAvatar(
-                        child: Icon(
-                          _toDoList[index]["ok"] ? Icons.check : Icons.error,
-                        ),
-                      ),
+                      onDismissed: (direction) {
+                        setState(() {
+                          _lastRemoved = Map.from(_toDoList[index]);
+                          _lastRemovedPos = index;
+                          _toDoList.removeAt(index);
+
+                          saveData(_toDoList);
+
+                          final SnackBar snack = SnackBar(
+                            content: Text(
+                                "Tarefa: \"${_lastRemoved["title"]}\" removida!"),
+                            action: SnackBarAction(
+                              label: "Desfazer",
+                              onPressed: () {
+                                setState(() {
+                                  _toDoList.insert(
+                                      _lastRemovedPos, _lastRemoved);
+                                  saveData(_toDoList);
+                                });
+                              },
+                            ),
+                            duration: Duration(seconds: 2),
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(snack);
+                        });
+                      },
                     );
                   },
                 ),
