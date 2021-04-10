@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lista_de_tarefas/services/file_service.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -6,7 +7,20 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  List _toDoList = [];
+  List _toDoList = <Map>[];
+
+  TextEditingController _toDoController = TextEditingController();
+
+  _addToDo() {
+    setState(() {
+      Map<String, dynamic> newToDo = {};
+      newToDo["title"] = _toDoController.text;
+      newToDo["ok"] = false;
+      _toDoController.clear();
+      _toDoList.add(newToDo);
+      saveData(_toDoList);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,17 +40,41 @@ class _HomeState extends State<Home> {
                   Expanded(
                     child: TextField(
                       decoration: InputDecoration(labelText: "Nova Tarefa"),
+                      controller: _toDoController,
                     ),
                   ),
                   SizedBox(
                     width: 16,
                   ),
                   ElevatedButton(
-                    onPressed: () {},
-                    child: Text("Adicionar"),
+                    onPressed: _addToDo,
+                    child: Text("+"),
                   )
                 ],
               ),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  itemCount: _toDoList.length,
+                  itemBuilder: (context, index) {
+                    return CheckboxListTile(
+                      onChanged: (newVal) {
+                        setState(() {
+                          _toDoList[index]["ok"] = newVal;
+                          saveData(_toDoList);
+                        });
+                      },
+                      title: Text(_toDoList[index]["title"]),
+                      value: _toDoList[index]["ok"],
+                      secondary: CircleAvatar(
+                        child: Icon(
+                          _toDoList[index]["ok"] ? Icons.check : Icons.error,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              )
             ],
           ),
         ),
