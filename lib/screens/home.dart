@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:lista_de_tarefas/services/file_service.dart';
 
@@ -8,6 +10,16 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   List _toDoList = <Map>[];
+
+  @override
+  void initState() {
+    super.initState();
+    readData().then((data) {
+      setState(() {
+        _toDoList = json.decode(data);
+      });
+    });
+  }
 
   TextEditingController _toDoController = TextEditingController();
 
