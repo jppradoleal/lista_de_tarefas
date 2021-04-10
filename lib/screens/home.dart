@@ -37,6 +37,21 @@ class _HomeState extends State<Home> {
     });
   }
 
+  Future<Null> _refresh() async {
+    await Future.delayed(Duration(milliseconds: 200));
+    setState(() {
+      _toDoList.sort((a, b) {
+        if (a["ok"] && !b["ok"])
+          return 1;
+        else if (!a["ok"] && !b["ok"])
+          return -1;
+        else
+          return 0;
+      });
+      saveData(_toDoList);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,47 +83,52 @@ class _HomeState extends State<Home> {
                 ],
               ),
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.only(top: 10.0),
-                  itemCount: _toDoList.length,
-                  itemBuilder: (context, index) {
-                    return ToDo(
-                      title: _toDoList[index]["title"],
-                      isDone: _toDoList[index]["ok"],
-                      onChanged: (newVal) {
-                        setState(() {
-                          _toDoList[index]["ok"] = newVal;
-                          saveData(_toDoList);
-                        });
-                      },
-                      onDismissed: (direction) {
-                        setState(() {
-                          _lastRemoved = Map.from(_toDoList[index]);
-                          _lastRemovedPos = index;
-                          _toDoList.removeAt(index);
+                child: RefreshIndicator(
+                  onRefresh: _refresh,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    itemCount: _toDoList.length,
+                    itemBuilder: (context, index) {
+                      return ToDo(
+                        title: _toDoList[index]["title"],
+                        isDone: _toDoList[index]["ok"],
+                        onChanged: (newVal) {
+                          setState(() {
+                            _toDoList[index]["ok"] = newVal;
+                            saveData(_toDoList);
+                          });
+                        },
+                        onDismissed: (direction) {
+                          setState(() {
+                            _lastRemoved = Map.from(_toDoList[index]);
+                            _lastRemovedPos = index;
+                            _toDoList.removeAt(index);
 
-                          saveData(_toDoList);
+                            saveData(_toDoList);
 
-                          final SnackBar snack = SnackBar(
-                            content: Text(
-                                "Tarefa: \"${_lastRemoved["title"]}\" removida!"),
-                            action: SnackBarAction(
-                              label: "Desfazer",
-                              onPressed: () {
-                                setState(() {
-                                  _toDoList.insert(
-                                      _lastRemovedPos, _lastRemoved);
-                                  saveData(_toDoList);
-                                });
-                              },
-                            ),
-                            duration: Duration(seconds: 2),
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(snack);
-                        });
-                      },
-                    );
-                  },
+                            final SnackBar snack = SnackBar(
+                              content: Text(
+                                  "Tarefa: \"${_lastRemoved["title"]}\" removida!"),
+                              action: SnackBarAction(
+                                label: "Desfazer",
+                                onPressed: () {
+                                  setState(() {
+                                    _toDoList.insert(
+                                        _lastRemovedPos, _lastRemoved);
+                                    saveData(_toDoList);
+                                  });
+                                },
+                              ),
+                              duration: Duration(seconds: 2),
+                            );
+                            ScaffoldMessenger.of(context)
+                                .removeCurrentSnackBar();
+                            ScaffoldMessenger.of(context).showSnackBar(snack);
+                          });
+                        },
+                      );
+                    },
+                  ),
                 ),
               )
             ],
